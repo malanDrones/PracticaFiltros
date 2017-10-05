@@ -20,6 +20,11 @@ Mat imagen_laplace;
 Mat imagen_sombrero;
 Mat imagen_bordes;
 Mat imagen_enfatizador;
+Mat imagen_derivador;
+Mat imagen_dilatacion;
+Mat imagen_erosion;
+Mat imagen_apertura;
+Mat imagen_cerradura;
 
 //Funcion que saca blanco y negro de imagen
 void blanco_negro(const Mat &sourceImage, Mat &destinationImage)
@@ -51,7 +56,7 @@ void promedio(const Mat &sourceImage, Mat &destinationImage)
 if (destinationImage.empty())
 		destinationImage = Mat(sourceImage.rows, sourceImage.cols, sourceImage.type());
 
-blur( sourceImage, destinationImage, Size( 10, 10 ), Point(-1,-1) );
+blur(sourceImage, destinationImage, Size( 10, 10 ), Point(-1,-1) );
 
 }
 
@@ -62,7 +67,7 @@ void gauss(const Mat &sourceImage, Mat &destinationImage)
 if (destinationImage.empty())
 		destinationImage = Mat(sourceImage.rows, sourceImage.cols, sourceImage.type());
 
-GaussianBlur(sourceImage, destinationImage, Size( 5, 5 ), 0, 0 );
+GaussianBlur(sourceImage, destinationImage, Size( 9, 9 ), 0, 0 );
 
 }
 
@@ -72,7 +77,7 @@ void mediano(const Mat &sourceImage, Mat &destinationImage)
 if (destinationImage.empty())
 		destinationImage = Mat(sourceImage.rows, sourceImage.cols, sourceImage.type());
 
-medianBlur ( sourceImage, destinationImage, 3 );
+medianBlur ( sourceImage, destinationImage, 5 );
 
 }
 
@@ -126,32 +131,47 @@ convertScaleAbs( procesado, destinationImage );
 
 void bordes(const Mat &sourceImage, Mat &destinationImage)
 {
-Mat procesado;
+Mat umbral;
 
+if (umbral.empty())
+    umbral = Mat(sourceImage.rows, sourceImage.cols, sourceImage.type());
 
-int edgeThresh = 1;
-int lowThreshold = 20;
-int ratio = 3;
-int kernel_size = 3;
+int threshold_value = 100;
 
-if (destinationImage.empty())
-    destinationImage = Mat(sourceImage.rows, sourceImage.cols, sourceImage.type());
+/*0: Binary
+1: Binary Inverted
+2: Threshold Truncated
+3: Threshold to Zero
+4: Threshold to Zero Inverted */
 
-if (procesado.empty())
-    procesado = Mat(sourceImage.rows, sourceImage.cols, sourceImage.type());
+int threshold_type = 0;
+int max_BINARY_value = 255;
 
+cvtColor( sourceImage, umbral, CV_BGR2GRAY );
 
-/// Canny detector
-  Canny( sourceImage, procesado, lowThreshold, lowThreshold*ratio, kernel_size );
+threshold( umbral, umbral, threshold_value, max_BINARY_value,threshold_type );
 
-  /// Using Canny's output as a mask, we display our result
-  destinationImage = Scalar::all(0);
+laplace(umbral, destinationImage);
 
-  sourceImage.copyTo(destinationImage, procesado);
+ imshow("bordes", destinationImage);
 
 }
 
-void sobel(const Mat &sourceImage, Mat &destinationImage)
+void enfatizador(const Mat &sourceImage, Mat &destinationImage)
+{
+
+Mat lapla;
+
+if (lapla.empty())
+    lapla= Mat(sourceImage.rows, sourceImage.cols, sourceImage.type());
+promedio(sourceImage,lapla);
+laplace(lapla, lapla);
+addWeighted( sourceImage, 0.5, lapla, 0.5, 0, destinationImage );
+imshow("enhanced", destinationImage);
+}
+
+
+void derivador(const Mat &sourceImage, Mat &destinationImage)
 {
 Mat procesado;
 
@@ -179,11 +199,77 @@ if (procesado.empty())
   Sobel( sourceImage, grad_y, ddepth, 0, 1, 3, scale, delta, BORDER_DEFAULT );
   convertScaleAbs( grad_y, abs_grad_y );
 
+  imshow("imagen derivador en X", abs_grad_x);
+  imshow("imagen derivador en Y", abs_grad_y);
+
   /// Total Gradient (approximate)
   addWeighted( abs_grad_x, 0.5, abs_grad_y, 0.5, 0, destinationImage );
 
 }
 
+void dilatacion(const Mat &sourceImage, Mat &destinationImage)
+{
+  int dilation_type;
+  int dilation_size = 4;
+  int dilation_elem = 0;
+  if( dilation_elem == 0 ){ dilation_type = MORPH_RECT; }
+  else if( dilation_elem == 1 ){ dilation_type = MORPH_CROSS; }
+  else if( dilation_elem == 2) { dilation_type = MORPH_ELLIPSE; }
+
+  Mat element = getStructuringElement( dilation_type,
+                                       Size( 2*dilation_size + 1, 2*dilation_size+1 ),
+                                       Point( dilation_size, dilation_size ) );
+
+  dilate( sourceImage, destinationImage, element);
+  imshow("dilate", destinationImage);
+
+}
+
+void erosion(const Mat &sourceImage, Mat &destinationImage)
+{
+  int erosion_type;
+  int erosion_size = 4;
+  int erosion_elem = 0;
+  if( erosion_elem == 0 ){ erosion_type = MORPH_RECT; }
+  else if( erosion_elem == 1 ){ erosion_type = MORPH_CROSS; }
+  else if( erosion_elem == 2) { erosion_type = MORPH_ELLIPSE; }
+
+  Mat element = getStructuringElement( erosion_type,
+                                       Size( 2*erosion_size + 1, 2*erosion_size+1 ),
+                                       Point( erosion_size, erosion_size ) );
+
+  erode( sourceImage, destinationImage, element);
+  imshow("erode", destinationImage);
+
+}
+
+void apertura(const Mat &sourceImage, Mat &destinationImage)
+{
+Mat procesado;
+
+if (procesado.empty())
+    procesado = Mat(sourceImage.rows, sourceImage.cols, sourceImage.type());
+
+
+dilatacion(sourceImage, procesado);
+erosion(procesado, destinationImage);
+imshow("apertura", destinationImage);
+}
+
+void cerradura(const Mat &sourceImage, Mat &destinationImage)
+{
+Mat procesado;
+
+if (procesado.empty())
+    procesado = Mat(sourceImage.rows, sourceImage.cols, sourceImage.type());
+
+
+erosion(sourceImage, procesado);
+dilatacion(procesado, destinationImage);
+
+
+imshow("cerradura", destinationImage);
+}
 //Esta funcion toma una matriz y llama a las demás para modificarla
 void tratamiento_imagen(const Mat &sourceImage)
 {
@@ -194,12 +280,17 @@ mediano(imagen_bn, imagen_mediano);
 laplace(imagen_bn, imagen_laplace);
 sombrero(imagen_bn, imagen_sombrero);
 bordes(imagen_bn,imagen_bordes);
-sobel(imagen_bn, imagen_enfatizador);
+derivador(imagen_bn, imagen_derivador);
+enfatizador(imagen_bn, imagen_enfatizador);
+dilatacion(imagen_bn,imagen_dilatacion);
+erosion(imagen_bn, imagen_erosion);
+apertura(imagen_bn, imagen_apertura);
+cerradura(imagen_bn, imagen_cerradura);
 }
 
 int main() {
 
-imagen = imread("lena.jpg");  //0 is the id of video device.0 if you have only one camera.
+imagen = imread("Carmina.jpeg");  //0 is the id of video device.0 if you have only one camera.
 
 //unconditional loop
 while (true) {
@@ -212,8 +303,8 @@ imshow("imagen gauss", imagen_gauss);
 imshow("imagen mediano", imagen_mediano);
 imshow("imagen laplace", imagen_laplace);
 imshow("imagen sombrero", imagen_sombrero);
-imshow("imagen bordes", imagen_bordes);
-imshow("imagen enfatizador", imagen_enfatizador);
+//imshow("imagen bordes", imagen_bordes);
+imshow("imagen derivador X y Y", imagen_derivador);
 
 
 if (waitKey(30) >= 0)
