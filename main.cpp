@@ -2,7 +2,7 @@
 * File:   main.cpp
 * Author: sagar
 *
-* Created on 10 September, 2012, 7:48 PM
+* Created on 10 September, 2012, 7:48 PMf
 */
 
 #include <opencv2/highgui/highgui.hpp>
@@ -153,8 +153,6 @@ threshold( umbral, umbral, threshold_value, max_BINARY_value,threshold_type );
 
 laplace(umbral, destinationImage);
 
- imshow("bordes", destinationImage);
-
 }
 
 void enfatizador(const Mat &sourceImage, Mat &destinationImage)
@@ -167,7 +165,7 @@ if (lapla.empty())
 promedio(sourceImage,lapla);
 laplace(lapla, lapla);
 addWeighted( sourceImage, 0.5, lapla, 0.5, 0, destinationImage );
-imshow("enhanced", destinationImage);
+
 }
 
 
@@ -221,7 +219,6 @@ void dilatacion(const Mat &sourceImage, Mat &destinationImage)
                                        Point( dilation_size, dilation_size ) );
 
   dilate( sourceImage, destinationImage, element);
-  imshow("dilate", destinationImage);
 
 }
 
@@ -239,7 +236,6 @@ void erosion(const Mat &sourceImage, Mat &destinationImage)
                                        Point( erosion_size, erosion_size ) );
 
   erode( sourceImage, destinationImage, element);
-  imshow("erode", destinationImage);
 
 }
 
@@ -253,7 +249,7 @@ if (procesado.empty())
 
 dilatacion(sourceImage, procesado);
 erosion(procesado, destinationImage);
-imshow("apertura", destinationImage);
+
 }
 
 void cerradura(const Mat &sourceImage, Mat &destinationImage)
@@ -268,7 +264,6 @@ erosion(sourceImage, procesado);
 dilatacion(procesado, destinationImage);
 
 
-imshow("cerradura", destinationImage);
 }
 //Esta funcion toma una matriz y llama a las demás para modificarla
 void tratamiento_imagen(const Mat &sourceImage)
@@ -303,9 +298,13 @@ imshow("imagen gauss", imagen_gauss);
 imshow("imagen mediano", imagen_mediano);
 imshow("imagen laplace", imagen_laplace);
 imshow("imagen sombrero", imagen_sombrero);
-//imshow("imagen bordes", imagen_bordes);
+imshow("imagen bordes", imagen_bordes);
 imshow("imagen derivador X y Y", imagen_derivador);
-
+imshow("imagen enfatizador", imagen_enfatizador);
+imshow("imagen dilatacion", imagen_dilatacion);
+imshow("imagen erosion", imagen_erosion);
+imshow("imagen apertura", imagen_apertura);
+imshow("imagen cerradura", imagen_cerradura);
 
 if (waitKey(30) >= 0)
 break;
